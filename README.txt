@@ -5,7 +5,7 @@ Requires at least: 3.0
 Tested up to: 3.0.4
 Stable tag: 0.1
 
-OnpageSEO will enable you to set custom meta-data on your pages, such as title, description, keywords and indexing options.
+A minimalistic but functionality-specked SEO plugin for wordpress.
 
 == Description ==
 

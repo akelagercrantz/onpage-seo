@@ -416,7 +416,7 @@ function onpage_seo_extra_meta() { global $onpage_seo;
  * @since   0.1
  */
 function onpage_seo_robots() { global $onpage_seo;
-  $onpage_seo->indexing();
+  $onpage_seo->robots();
 }
 
 /**
