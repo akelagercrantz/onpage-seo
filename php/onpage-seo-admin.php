@@ -23,7 +23,7 @@ if ( ! class_exists( "OnpageSEOAdmin" ) ) {
     function OnpageSEOAdmin() {
       global $onpage_seo;
       
-      $onpage_seo_tags = new OnpageSEOTags();
+      $onpage_seo_taxonomy_terms = new OnpageSEOTaxonomyTerms();
       $onpage_seo_single = new OnpageSEOSingle();
       $onpage_seo_authors = new OnpageSEOAuthors();
       $onpage_seo_categories = new OnpageSEOCategories();
@@ -134,38 +134,38 @@ if ( ! class_exists( "OnpageSEOAdmin" ) ) {
         
         <p>
           OnpageSEO will enable you to set custom meta-data on your posts, pages etc, such as title, description, keywords and indexing options.
-          OnpageSEO uses a hierarchy of three levels when determining what meta to print to the client. The most specific settings found will be used.
-          If we take a post with <strong>ID 5</strong> as an example, OnpageSEO will first look for <strong>level 3</strong> meta-data related to that <strong>post</strong>.
-          If none is found, it will look for meta data related to <strong>posts, level 2</strong>. If still there's no data to be found, the <strong>general</strong> settings will be used, <strong>level 1</strong>.
+          OnpageSEO uses a hierarchy of two levels when determining what meta to print to the client. The most specific settings found will be used.
+          If we take a post with <strong>ID 5</strong> as an example, OnpageSEO will first look for <strong>level 2</strong> meta-data related to that <strong>post</strong>.
+          If none is found, it will look for meta data related to <strong>posts, level 1</strong>.
         </p>
         <ol>
-          <li><strong>Level 1</strong> is the <strong>general settings</strong>, these settings are the least specific and will be applied to all pages unless a more specific setting is found.</li>
-          <li><strong>Level 2</strong> contains settings related to a special type of entities, such as posts, wordpress pages or categories.</li>
-          <li><strong>Level 3</strong> is the most specific level. These settings are connected to a specific post, page or category.</li>
+          <li><strong>Level 1</strong> contains settings related to a special type of entities, such as posts, wordpress pages or categories.</li>
+          <li><strong>Level 2</strong> is the most specific level. These settings are connected to a specific post, page or category.</li>
         </ol>
-        <p>
-          Unless you use a static page as your homepage, it will always use the general settings (level 1), so you should probably start there.
-        </p>
         
         <h4>Available variables</h4>
         <ul class="onpage-seo-variables">
           <li><strong>%blog_title%</strong> - The blog title, as set in the wordpress settings.</li>
           <li><strong>%blog_description%</strong> - The blog description, as set in the wordpress settings.</li>
-          <li><strong>%post_title%</strong> - The post or page title (only available on <strong>level 2: posts</strong> and <strong>level 3: post</strong>).</li>
-          <li><strong>%category_title%</strong> - The post title (only available on <strong>level 2: categories</strong> and <strong>level 3: category</strong>).</li>
+          <li><strong>%post_title%</strong> - The post or page title (only available on <strong>level 1: posts</strong> and <strong>level 2: post</strong>).</li>
+          <li><strong>%post_excerpt%</strong> - The excerpt of a post or page, automatically generated if there is none.</li>
+          <li><strong>%category_title%</strong> - The post title (only available on <strong>level 1: categories</strong> and <strong>level 2: category</strong>).</li>
           <li><strong>%request_words%</strong> - The request URI in human readable form.</li>
-          <li><strong>%date%</strong> - Depending on the page being viewed, this will print the archive date or the publish date.
+          <li><strong>%date%</strong> - Depending on the page being viewed, this will print the archive date or the publish date.</li>
+          <li><strong>%taxonomy%</strong> - The taxonomy name.</li>
+          <li><strong>%term%</strong> - The taxonomy term name.</li>
+          <li><strong>%author_name%</strong> - The author name, either in an author archive or the post author.</li>
         </ul>
         
         <div class="metabox-holder">
           <div id="normal-sortables" class="meta-box-sortables ui-sortable">
       
       <?php
-      $this->form_html( 1, "general" );
       foreach ( $onpage_seo->entity_types as $singular => $plural ) {
-        $this->form_html( 2, $plural );
+        $this->form_html( 1, $plural );
       }
-      $this->form_html( 3, "404" );
+      $this->form_html( 2, "home" );
+      $this->form_html( 2, "404" );
       
       echo "</div></div></div>";
     }
@@ -236,6 +236,7 @@ if ( ! class_exists( "OnpageSEOAdmin" ) ) {
                 <?php
                   $index_setting = $onpage_seo->find_meta( $onpage_seo->meta_types['robots'], array( "entity_type" => $entity_type) );
                   switch ( $index_setting ) {
+                    default:
                     case "index, follow":
                       $index_follow = "checked";
                       break;
@@ -248,9 +249,6 @@ if ( ! class_exists( "OnpageSEOAdmin" ) ) {
                     case "noindex, nofollow":
                       $noindex_nofollow = "checked";
                       break;
-                    default:
-                      $inherit = "checked";
-                      break;
                   }
                 ?>
                 <tr class="">
@@ -258,7 +256,6 @@ if ( ! class_exists( "OnpageSEOAdmin" ) ) {
                     <label for="<?php echo "{$onpage_seo::$post_array}_{$onpage_seo->meta_types['robots']}"; ?>"><?php echo __( 'Indexing options', 'onpage-seo' ); ?></label>
                   </th>
                   <td>
-                    <input type="radio" id="<?php echo "{$onpage_seo::$post_array}_{$onpage_seo->meta_types['robots']}"; ?>" name="<?php echo "{$onpage_seo::$post_array}[{$onpage_seo->meta_types['robots']}]"; ?>" <?php if ( isset( $inherit ) ) echo $inherit; ?> value=""> None (inherit)<br>
                     <input type="radio" id="<?php echo "{$onpage_seo::$post_array}_{$onpage_seo->meta_types['robots']}"; ?>" name="<?php echo "{$onpage_seo::$post_array}[{$onpage_seo->meta_types['robots']}]"; ?>" <?php if ( isset( $index_follow ) ) echo $index_follow; ?> value="index, follow"> Index, Follow<br>
                     <input type="radio" id="<?php echo "{$onpage_seo::$post_array}_{$onpage_seo->meta_types['robots']}"; ?>" name="<?php echo "{$onpage_seo::$post_array}[{$onpage_seo->meta_types['robots']}]"; ?>" <?php if ( isset( $noindex_follow ) ) echo $noindex_follow; ?> value="noindex, follow"> No-index, Follow<br>
                     <input type="radio" id="<?php echo "{$onpage_seo::$post_array}_{$onpage_seo->meta_types['robots']}"; ?>" name="<?php echo "{$onpage_seo::$post_array}[{$onpage_seo->meta_types['robots']}]"; ?>" <?php if ( isset( $index_nofollow ) ) echo $index_nofollow; ?> value="index, nofollow"> Index, No-follow<br>
@@ -372,9 +369,9 @@ if ( ! class_exists( "OnpageSEOAdmin" ) ) {
   
 }
 
-require_once('entity-types/onpage-seo-tags.php');
 require_once('entity-types/onpage-seo-single.php');
 require_once('entity-types/onpage-seo-authors.php');
 require_once('entity-types/onpage-seo-categories.php');
+require_once('entity-types/onpage-seo-taxonomy-terms.php');
 
 ?>

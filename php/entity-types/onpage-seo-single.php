@@ -24,6 +24,8 @@ if ( ! class_exists( "OnpageSEOSingle" ) ) {
     function OnpageSEOSingle() {
       global $onpage_seo;
       
+      $custom_post_types = get_post_types( array( '_builtin' => false ) );
+      
       add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ) );
       add_action( 'save_post',      array( $this, 'save_post_meta' ) );
       add_action( 'delete_post',    array( $this, 'delete_post_meta' ) );
@@ -36,11 +38,14 @@ if ( ! class_exists( "OnpageSEOSingle" ) ) {
      * @package OnpageSEO
      * @since   0.1
      */
-    function add_meta_box() {
-      
-      
-      add_meta_box( 'onpage_seo', "OnpageSEO", array( $this, 'form_html' ), "post", "advanced", "high", array( "entity_type" => "post" ) );
-      add_meta_box( 'onpage_seo', "OnpageSEO", array( $this, 'form_html' ), "page", "advanced", "high", array( "entity_type" => "page" ) );
+    function add_meta_box() { global $onpage_seo;
+      $post_types = get_post_types();
+
+      foreach ( $post_types as $post_type ) {
+        if ( array_search( $post_type, array_keys( $onpage_seo->entity_types ) ) !== false )
+          add_meta_box( 'onpage_seo', 'OnpageSEO', array( $this, 'form_html' ), $post_type, 'advanced', 'high', array( 'entity_type' => $post_type ) );
+      }
+
     }
     
     /**

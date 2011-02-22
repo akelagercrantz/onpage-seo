@@ -23,7 +23,7 @@ if ( ! class_exists( "OnpageSEOAuthors" ) ) {
     function OnpageSEOAuthors() {
       global $onpage_seo;
       
-      // Adds the input boxes to the tag forms.
+      // Adds the input boxes to the author forms.
       add_action( 'show_user_profile', array( $this, 'edit_form_html' ) );
       add_action( 'edit_user_profile', array( $this, 'edit_form_html' ) );
       add_action( 'personal_options_update', array( $this, 'save_author_meta' ) );
@@ -144,11 +144,11 @@ if ( ! class_exists( "OnpageSEOAuthors" ) ) {
     <?php }
     
     /**
-     * Gets called after a tag has been created or edited. Saves the onpage-seo settings.
+     * Gets called after a author has been created or edited. Saves the onpage-seo settings.
      *
      * @package OnpageSeo
      * @since   0.1
-     * @param   integer   $id   The tag ID.
+     * @param   integer   $id   The author ID.
      */
     function save_author_meta( $id ) { global $onpage_seo;
       if ( !current_user_can('edit_users'))
@@ -159,11 +159,11 @@ if ( ! class_exists( "OnpageSEOAuthors" ) ) {
     }
     
     /**
-     * Gets called after a tag has been deleted. Removes all related meta-data.
+     * Gets called after a author has been deleted. Removes all related meta-data.
      *
      * @package OnpageSEO
      * @since   0.1
-     * @param   integer   $id   The tag ID.
+     * @param   integer   $id   The author ID.
      */
     function delete_author_meta( $id ) { global $onpage_seo;
       foreach ( $onpage_seo->meta_types as $meta_type ) {

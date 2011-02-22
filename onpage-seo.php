@@ -49,8 +49,9 @@ if ( ! class_exists( "OnpageSEO" ) ) {
       "page" => "pages",
       "category" => "categories",
       "archive" => "archives",
-      "tag" => "tags",
-      "author" => "authors"
+      "taxonomy term" => "taxonomy terms",
+      "author" => "authors",
+      "search" => "searches"
     );
     
     public $meta_types = array(
@@ -103,12 +104,10 @@ if ( ! class_exists( "OnpageSEO" ) ) {
      * @since   0.1
      */
     function add_custom_post_types() {
-      /*
-      
-      for each custom post type
-      $onpage_seo->entity_types add custom post type
-      
-      */
+      $custom_post_types = get_post_types( array( "_builtin" => false ), "objects" );
+      foreach( $custom_post_types as $custom_post_type )
+        # should not use the label as plural identifier. Labels may change and may contain unwanted characters.
+        $this->entity_types[$custom_post_type->name] = strtolower($custom_post_type->label);
     }
     
     /**
@@ -166,14 +165,10 @@ if ( ! class_exists( "OnpageSEO" ) ) {
      * @return  mixed                 Returns a string with the entity_type, or null if there is no level above.
      */
     function entity_type_for_level_above( $entity_type ) {
-      // The general entity_type is the topmost level. There is no level above.
-      if ( $entity_type == "general" )
-        return null;
-      
       if ( isset( $this->entity_types[$entity_type] ) )
         return $this->entity_types[$entity_type];
       else
-        return "general";
+        return null;
     }
     
     /**
@@ -183,22 +178,25 @@ if ( ! class_exists( "OnpageSEO" ) ) {
      * @since   0.1
      * @return  array       An array containing the entity_type and possibly the entity_id.
      */
-    function entity_being_viewed() { global $post;
+    function entity_being_viewed() { global $post, $wp_query;
       if ( is_single() or is_page() )
         // We're viewing a single entity, the entity_type will be a post_type.
         return array( "entity_type" => get_post_type(), "entity_id" => $post->ID );
+      elseif ( is_home() )
+        // User is browsing the home-page.
+        return array( "entity_type" => "home" );
       elseif ( is_category() ) {
+        $category = $wp_query->get_queried_object();
         // We're viewing a category page, the entity_type is simply "category".
-        $categories = get_the_category();
-        $category = $categories[0];
         return array( "entity_type" => "category", "entity_id" => $category->term_id );
       }
       elseif ( is_404() )
         return array( "entity_type" => "404" );
-      elseif ( is_tag() ) {
-        global $wp_query;
-        $tag = $wp_query->get_queried_object();
-        return array( "entity_type" => "tag", "entity_id" => $tag->term_id );
+      elseif ( is_search() )
+        return array( "entity_type" => "search" );
+      elseif ( is_tax() ) {
+        $taxonomy_term = $wp_query->get_queried_object();
+        return array( "entity_type" => "taxonomy term", "entity_id" => $taxonomy_term->term_id );
       }
       elseif ( is_author() ) {
         global $author_name, $author;
@@ -208,8 +206,8 @@ if ( ! class_exists( "OnpageSEO" ) ) {
       elseif ( is_archive() )
         return array( "entity_type" => "archive" );
       else
-        // We're viewing something else. We will use our default option here, "general".
-        return array( "entity_type" => "general" );
+        // We're viewing something else.
+        return array();
     }
     
     /**
@@ -246,11 +244,34 @@ if ( ! class_exists( "OnpageSEO" ) ) {
       else
         $meta_value = str_replace( '%date%',              date(get_option('date_format')),  $meta_value );
       
-      if ( is_tag() )
-        $meta_value = str_replace( '%tag%',               single_tag_title( '', false ),    $meta_value );
-      else
-        $meta_value = str_replace( '%tags',               "",                               $meta_value );
+      if ( is_tax() ) {
+        global $wp_query;
+        $term = $wp_query->get_queried_object();
+        $meta_value = str_replace( '%taxonomy%',          $term->taxonomy,                  $meta_value );
+        $meta_value = str_replace( '%term%',              $term->name,                      $meta_value );
+      }
+      else {
+        $meta_value = str_replace( '%taxonomy%',          "",                               $meta_value );
+        $meta_value = str_replace( '%term%',              "",                               $meta_value );
+      }
       
+      if ( is_author() )
+        $curauth = (get_query_var('author_name')) ? get_user_by('slug', get_query_var('author_name')) : get_userdata(get_query_var('author'));
+      else
+        $curauth = get_userdata( $post->post_author );
+      $meta_value =   str_replace( '%author_name%',       $curauth->display_name,           $meta_value );
+      
+      if ( is_single() || is_page() ) {
+        if ( $post->post_excerpt == "" )
+          $post_excerpt = substr( trim( strip_tags( stripcslashes( str_replace( array( "\r\n", "\r", "\n" ), " ", $post->post_content ) ) ) ), 0, 150 ) . "...";
+        else
+          $post_excerpt = $post->post_excerpt;
+      }
+      else
+        $post_excerpt = "";
+      
+      $meta_value = str_replace( '%post_excerpt%',        $post_excerpt,                    $meta_value);
+
       return $meta_value;
     }
     
@@ -296,8 +317,21 @@ if ( ! class_exists( "OnpageSEO" ) ) {
      */
     function title() {
       $title = $this->find_meta( $this->meta_types['title'], $this->entity_being_viewed(), true );
-      if ( !empty( $title ) )
-        echo "<title>" . apply_filters( "onpage_seo_prepare_title", $title ) . "</title>\n";
+      echo "<title>";
+      
+      if ( empty( $title ) ) {
+        wp_title( '|', true, 'right' );
+        // Add the blog name.
+        bloginfo( 'name' );
+        // Add the blog description for the home/front page.
+        $site_description = get_bloginfo( 'description', 'display' );
+        if ( $site_description && ( is_home() || is_front_page() ) )
+          echo " | $site_description";
+      }
+      else
+        echo apply_filters( "onpage_seo_prepare_title", $title );
+        
+      echo "</title>\n";
     }
     
     /**

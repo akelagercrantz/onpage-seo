@@ -4,15 +4,15 @@
  * @version 0.1
  */
 
-if ( ! class_exists( "OnpageSEOTags" ) ) {
+if ( ! class_exists( "OnpageSEOTaxonomyTerms" ) ) {
   
   /**
-   * The tags class. This class contains all the admin functionality related to tag archives.
+   * The taxonomy terms class. This class contains all the admin functionality related to taxonomy term archives.
    *
    * @package OnpageSEO
    * @since   0.1
    */
-  class OnpageSEOTags {
+  class OnpageSEOTaxonomyTerms {
     
     /**
      * The constructor function.
@@ -20,15 +20,21 @@ if ( ! class_exists( "OnpageSEOTags" ) ) {
      * @package OnpageSEO
      * @since   0.1
      */
-    function OnpageSEOTags() {
+    function OnpageSEOTaxonomyTerms() {
       global $onpage_seo;
       
-      // Adds the input boxes to the tag forms.
-      add_action( 'post_tag_add_form_fields', array( $this, 'add_form_html' ) );
-      add_action( 'post_tag_edit_form_fields', array( $this, 'edit_form_html' ) );
-      add_action( 'created_post_tag', array( $this, 'save_tag_meta' ) );
-      add_action( 'edit_post_tag', array( $this, 'save_tag_meta' ) );
-      add_action( 'delete_post_tag', array( $this, 'delete_tag_meta' ) );
+      $taxonomies = get_taxonomies();
+      
+      foreach( $taxonomies as $taxonomy ) {
+        // Adds the input boxes to the taxonomy term forms.
+        add_action( "{$taxonomy}_add_form_fields", array( $this, 'add_form_html' ) );
+        add_action( "{$taxonomy}_edit_form_fields", array( $this, 'edit_form_html' ) );
+        add_action( "created_{$taxonomy}", array( $this, 'save_taxonomy_term_meta' ) );
+        add_action( "edit_{$taxonomy}", array( $this, 'save_taxonomy_term_meta' ) );
+        add_action( "delete_{$taxonomy}", array( $this, 'delete_taxonomy_term_meta' ) );
+      }
+      
+      
     }
     
     /**
@@ -38,8 +44,8 @@ if ( ! class_exists( "OnpageSEOTags" ) ) {
      * @since   0.1
      */
     function add_form_html() { global $onpage_seo;
-      $entity_type = "tag";
-      $inherit_entity_type = "tags"; ?>
+      $entity_type = "taxonomy term";
+      $inherit_entity_type = "taxonomy terms"; ?>
       
       <h4>OnpageSEO:</h4>
       
@@ -96,15 +102,16 @@ if ( ! class_exists( "OnpageSEOTags" ) ) {
     }
     
     /**
-     * Displays the html for the tag edit form.
+     * Displays the html for the taxonomy term edit form.
      *
      * @package OnpageSEO
      * @since   0.1
      */
-    function edit_form_html( $tag ) { global $onpage_seo;
-      $entity_type = "tag";
-      $inherit_entity_type = "tags";
-      $entity_id = $tag->term_id; ?>
+    function edit_form_html( $taxonomy_term ) { global $onpage_seo;
+      $entity_type = "taxonomy term";
+      $inherit_entity_type = "taxonomy terms";
+      
+      $entity_id = $taxonomy_term->term_id; ?>
 
       <tr>
         <th><h4>OnpageSEO:</h4></th>
@@ -202,32 +209,32 @@ if ( ! class_exists( "OnpageSEOTags" ) ) {
     <?php }
     
     /**
-     * Gets called after a tag has been created or edited. Saves the onpage-seo settings.
+     * Gets called after a taxonomy term has been created or edited. Saves the onpage-seo settings.
      *
      * @package OnpageSeo
      * @since   0.1
-     * @param   integer   $id   The tag ID.
+     * @param   integer   $id   The taxonomy term ID.
      */
-    function save_tag_meta( $id ) { global $onpage_seo;
+    function save_taxonomy_term_meta( $id ) { global $onpage_seo;
       if ( isset( $_POST[OnpageSEO::$post_array] ) )
-        $onpage_seo->admin->save_form( $_POST[OnpageSEO::$post_array], array( "entity_type" => "tag", "entity_id" => $id ) );
+        $onpage_seo->admin->save_form( $_POST[OnpageSEO::$post_array], array( "entity_type" => "taxonomy term", "entity_id" => $id ) );
     }
     
     /**
-     * Gets called after a tag has been deleted. Removes all related meta-data.
+     * Gets called after a taxonomy term has been deleted. Removes all related meta-data.
      *
      * @package OnpageSEO
      * @since   0.1
-     * @param   integer   $id   The tag ID.
+     * @param   integer   $id   The taxonomy term ID.
      */
-    function delete_tag_meta( $id ) { global $onpage_seo;
+    function delete_taxonomy_term_meta( $id ) { global $onpage_seo;
       foreach ( $onpage_seo->meta_types as $meta_type ) {
-        $meta_id = $onpage_seo->admin->get_meta_id( $meta_type, array( "entity_type" => "tag", "entity_id" => $id ) );
+        $meta_id = $onpage_seo->admin->get_meta_id( $meta_type, array( "entity_type" => "taxonomy term", "entity_id" => $id ) );
         if ( !empty($meta_id) ) $onpage_seo->admin->delete_meta_data( $meta_id );
       }
     }
     
-  } # class OnpageSEOTags
+  } # class OnpageSEOTaxonomyTerms
   
 }
 ?>
